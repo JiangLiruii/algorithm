@@ -36,10 +36,10 @@ trie树是一个多叉树, 二叉树中是用左右子节点的指针来储存, 
 ```js
 class TrieNode {
     constructor(data) {
-        this.char_list = new Array(26)
+        this.children_list = new Array(26)
         this.is_end_char = false
         for (let i = 0; i < 26; i ++) {
-            this.char_list[] = String.fromCharCode(97+i)
+            this.children_list[i] = null
         }
         this.data = data
     }
@@ -52,19 +52,20 @@ class Trie {
         let current_node = this.root;
         for (let i = 0; i < text.length; i ++) {
             const index = text[i].codePointAt(0) - 97;
-            if (current_node[index] === null) {
-                current_node.char_list[index] = new TrieNode(text[i])
+            if (current_node.children_list[index] === null) {
+                current_node.children_list[index] = new TrieNode(text[i])
                 current_node.data = text[i]
             }
-            current_node = current_node[index]
+            current_node = current_node.children_list[index]
         }
         current_node.is_end_char = true;
     }
     find(text) {
         let current_node = this.root;
         for (let i = 0; i < text.length; i++) {
-            if (current_node.char_list[text[i]] !== null) {
-                current_node = current_node.char_list[text[i]]
+            const index = text[i].codePointAt(0) - 97;
+            if (current_node.children_list[index] !== null) {
+                current_node = current_node.children_list[index]
             }
             else {
                 return false
@@ -73,6 +74,84 @@ class Trie {
         return current_node.is_end_char
     }
 }
+
+var a = new Trie()
+a.insert('nihao')
+a.insert('her')
+a.insert('he')
+a.find('he') // True
 ```
 
+下面分析以下时间复杂度, 在插入过程中, 也就是构建Trie树的过程, 需要扫描所有的字符串, 时间复杂度为所有字符串长度的和O(n), 查询的效率就会很高了, 是O(m), m为查询的字符串长度.比如上例中构建的复杂度为5+3+2=10, 查询的复杂度为2
 
+可以看出这是一种空间换时间的办法, 生成children_list数组中有很多没有用到的元素. 都为null, 上例的数组长度为26, 每个元素是8字节(指针),那么每个节点就会需要额外的26*8=208字节的数据, 这还只是包含26个字符的情况.如果包含大小写, 特殊字符, 那么会需要更多的储存空间.
+
+是否有其他办法呢?可以使用有序数组, 即在插入的时候按顺序插入, 那么查找的时候二分查找, 复杂度会升高, 但是空间就会小很多. 也可以使用散列表, 但是就不能使用CPU的缓存了(不是连续储存的).
+下列是散列表的实现方式
+```js
+class TrieNode {
+    constructor(data) {
+        this.children_list = {}
+        this.is_end_char = false
+        this.data = data
+    }
+}
+class Trie {
+    constructor() {
+        this.root = new TrieNode('/')
+    }
+    insert(text) {
+        let current_node = this.root;
+        for (let i = 0; i < text.length; i ++) {
+            debugger
+            if (!current_node.children_list[text[i]]) {
+                current_node.children_list[text[i]] = new TrieNode(text[i])
+                current_node.data = text[i]
+            }
+            current_node = current_node.children_list[text[i]]
+        }
+        current_node.is_end_char = true;
+    }
+    find(text) {
+        let current_node = this.root;
+        for (let i = 0; i < text.length; i++) {
+            if (current_node.children_list[text[i]]) {
+                current_node = current_node.children_list[text[i]]
+            }
+            else {
+                return false
+            }
+        }
+        return current_node.is_end_char
+    }
+}
+
+var a = new Trie()
+a.insert('nihao')
+a.insert('her')
+a.insert('he')
+a.find('he')
+```
+
+还有一种节省空间的方式就是进行**缩点优化**, 比如
+
+![](/img/trie_6.jpg)
+
+它需要在完成插入之后再遍历一遍整个Trie树, 然后将单个节点的后续节点都合并起来, 会增加部分的复杂度.
+
+## Trie树与散列表红黑树的比较
+
+笼统上讲, 这三者都可以归为数据查找的问题, 但是Trie树的数据查找特指的是再一组字符串中查找字符串的功能, 比较散列表和红黑树与Trie树的场景, Trie树表现并不好
+
+1. Trie树包含的字符集不能太大, 否则浪费很多储存空间, 即使优化, 也要牺牲查询插入效率的代价
+2. 要求前缀重合度比较高, 否则会有很多单节点, 浪费更多空间
+3. 需要从0开始实现Trie树, 要保证没有bug的工程应用较难, 散列表和红黑树一般都有原生的数据结构
+4. 每个节点是通过指针串起来的, 对缓存不友好, 性能也会降低一些
+
+综合来看, Trie树并不适合字符串的精确匹配, 这种问题适合用散列表和红黑树来解决, 而是适合查找前缀匹配的字符串, 也就是最开始说的搜索关键字的那个问题
+
+假设用户输入'h', 和'he', 会分别提示`hello, her, hi, how`和`hello, her`, 这是红黑树和散列表办不到的.
+
+![](/img/trie_7.jpg)
+
+现在假设有1w条数据, 要求它的字符集大小以及前缀重合度, 也就是如何判断是否适合用Trie树来解决该问题?
