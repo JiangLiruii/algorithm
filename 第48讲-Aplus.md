@@ -27,6 +27,104 @@ function Manhattan(vertex1, vertex2) {
 
 实际上 A+算法就是对 Dijkstra 算法的简单改造, 引入了一个 **修正因子 h(i)**
 
+```js
+class PriorityQueue {
+  constructor(v) {
+    this.nodes = Array(v+1)
+    for (let i = 0; i <= v; i ++) {
+      const dist = Number.MAX_VALUE
+      this.node[i] = new Vertex(i, dist)
+    }
+    this.count = v
+  }
+  poll() {
+    this.count -= 1
+    return this.node.unshift()
+  }
+  add(vertex) {
+    this.count += 1
+    this.node.push(vertex)
+    heapify(this.node)
+  }
+  // 更新结点的值, 需要重新堆化, 重新符合小顶堆堆的定义
+  update(vertex) {
+    for (let i = 0; i < this.count; i ++) {
+      if (this.node[i].id === vertex.id) {
+        // 根据 f 而不是 dist 构建小顶堆
+        this.node[i].f = vertex.f
+      }
+    }
+    heapify(this.node) // 堆化函数详见最短路径
+  }
+  isEmpty() {
+    return this.count == 0
+  }
+}
+// 顶点
+class Vertex {
+  constructor(id, dist) {
+    this.id = id;
+    this.dist = dist;
+    // 添加 f 加入曼哈顿距离
+    this.f = 0;
+    // 加入坐标以计算曼哈顿距离
+    this.x = 0;
+    this.y = 0;
+  }
+}
+function dijkstra(s,t) {
+  // 还原最短路径
+  let predecessor = Array(this.v)
+  // 保存顶点数组
+  let vertexes = Array(v)
+  // 保存是否进入过队列
+  let inqueue = Array(v)
+  for(let i = 0; i < v; i++) {
+    vertexes[i] = new Vertex(i, Number.MAX_VALUE)
+    inqueue[i] = false
+  }
+  let queue = new PriorityQueue(v);
+  vertexes[s].dist = 0
+  inqueue[s] = true
+  queue.add(vertexes[s])
+  while(!queue.isEmpty()) {
+    let minVertex = queue.poll()
+    if (minVertex.id === t) {
+      // 走到终点即终止
+      queue.clear();
+      break;
+    }
+    for(let i = 0; i < this.adj.length; i ++) {
+      const e = adj[minVertex][i]
+      const nextVertex = vertexes[e.tid]
+      if (minVertex.dist + e.worth < nextVertex.dist) {
+        nextVertex.dist = minVertex.dist + e.worth
+        nextVertex.f = minVertex.dist + e.worth + Manhattan(nextVertex, vertexes[t])
+        predecessor[nextVertex.id] = minVertex.id
+        if(inqueue(nextVertex.id)) {
+          queue.update(nextVertex)
+        } else {
+          queue.add(nextVertex)
+          inqueue[nextVertex.id] = true
+        }
+      }
+    }
+  }
 
+  function print (s,t) {
+    if (s === t) return;
+    print(s, predecessor[t])
+    console.log('->', t)
+  }
+  print(s, t);
+}
+```
+因为不是最后 t 顶点出栈终止循环, 所以不一定路径一定是最短的, 但可以最快的找到一条相对比较近的路.
+
+在游戏中通常是把整个地图划分成了一个一个小方块, 只能上下左右四个方向移动, 这样就可以把边的权值设为1, 就可以把地图抽象成一个有向图, 利用 A*算法实现自动寻路.
+
+A* 算法属于启发式搜索算法, haiyou IDA* 算法, 蚁群算法, 遗传算法, 模拟退火算法等.
+
+启发式算法利用估价函数, 避免跑偏, 贪心的朝最有可能到达终点的方向前进.达到线路质量和执行效率的平衡.
 
 
