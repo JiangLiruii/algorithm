@@ -89,11 +89,7 @@ function dijkstra(s,t) {
   queue.add(vertexes[s])
   while(!queue.isEmpty()) {
     let minVertex = queue.poll()
-    if (minVertex.id === t) {
-      // 走到终点即终止
-      queue.clear();
-      break;
-    }
+
     for(let i = 0; i < this.adj.length; i ++) {
       const e = adj[minVertex][i]
       const nextVertex = vertexes[e.tid]
@@ -107,6 +103,11 @@ function dijkstra(s,t) {
           queue.add(nextVertex)
           inqueue[nextVertex.id] = true
         }
+      }
+      if (nextVertex.id === t) {
+        // 遇到终点即终止, 不一定是最短路径, 但是是相对最短路径
+        queue.clear();
+        break;
       }
     }
   }
@@ -123,7 +124,7 @@ function dijkstra(s,t) {
 
 在游戏中通常是把整个地图划分成了一个一个小方块, 只能上下左右四个方向移动, 这样就可以把边的权值设为1, 就可以把地图抽象成一个有向图, 利用 A*算法实现自动寻路.
 
-A* 算法属于启发式搜索算法, haiyou IDA* 算法, 蚁群算法, 遗传算法, 模拟退火算法等.
+A* 算法属于启发式搜索算法, 还有 IDA* 算法, 蚁群算法, 遗传算法, 模拟退火算法等.
 
 启发式算法利用估价函数, 避免跑偏, 贪心的朝最有可能到达终点的方向前进.达到线路质量和执行效率的平衡.
 
